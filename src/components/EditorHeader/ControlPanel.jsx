@@ -157,13 +157,13 @@ export default function ControlPanel({
 
     if (a.action === Action.ADD) {
       if (a.element === ObjectType.TABLE) {
-        deleteTable(a.id, false);
+        deleteTable(a.data.table.id, false);
       } else if (a.element === ObjectType.AREA) {
         deleteArea(areas[areas.length - 1].id, false);
       } else if (a.element === ObjectType.NOTE) {
         deleteNote(notes[notes.length - 1].id, false);
       } else if (a.element === ObjectType.RELATIONSHIP) {
-        deleteRelationship(a.data.id, false);
+        deleteRelationship(a.data.relationship.id, false);
       } else if (a.element === ObjectType.TYPE) {
         deleteType(types.length - 1, false);
       } else if (a.element === ObjectType.ENUM) {
@@ -191,7 +191,7 @@ export default function ControlPanel({
     } else if (a.action === Action.DELETE) {
       if (a.element === ObjectType.TABLE) {
         a.data.relationship.forEach((x) => addRelationship(x, false));
-        addTable(a.data.table, false);
+        addTable(a.data, false);
       } else if (a.element === ObjectType.RELATIONSHIP) {
         addRelationship(a.data, false);
       } else if (a.element === ObjectType.NOTE) {
@@ -326,7 +326,7 @@ export default function ControlPanel({
 
     if (a.action === Action.ADD) {
       if (a.element === ObjectType.TABLE) {
-        addTable(null, false);
+        addTable(a.data, false);
       } else if (a.element === ObjectType.AREA) {
         addArea(null, false);
       } else if (a.element === ObjectType.NOTE) {
@@ -361,7 +361,7 @@ export default function ControlPanel({
       if (a.element === ObjectType.TABLE) {
         deleteTable(a.data.table.id, false);
       } else if (a.element === ObjectType.RELATIONSHIP) {
-        deleteRelationship(a.data.id, false);
+        deleteRelationship(a.data.relationship.id, false);
       } else if (a.element === ObjectType.NOTE) {
         deleteNote(a.data.id, false);
       } else if (a.element === ObjectType.AREA) {
@@ -541,7 +541,10 @@ export default function ControlPanel({
     notes.forEach((note) => {
       minMaxXY.minX = Math.min(minMaxXY.minX, note.x);
       minMaxXY.minY = Math.min(minMaxXY.minY, note.y);
-      minMaxXY.maxX = Math.max(minMaxXY.maxX, note.x + noteWidth);
+      minMaxXY.maxX = Math.max(
+        minMaxXY.maxX,
+        note.x + (note.width ?? noteWidth),
+      );
       minMaxXY.maxY = Math.max(minMaxXY.maxY, note.y + note.height);
     });
 
@@ -644,10 +647,12 @@ export default function ControlPanel({
       case ObjectType.TABLE: {
         const copiedTable = tables.find((t) => t.id === selectedElement.id);
         addTable({
-          ...copiedTable,
-          x: copiedTable.x + 20,
-          y: copiedTable.y + 20,
-          id: nanoid(),
+          table: {
+            ...copiedTable,
+            x: copiedTable.x + 20,
+            y: copiedTable.y + 20,
+            id: nanoid(),
+          },
         });
         break;
       }
@@ -706,12 +711,15 @@ export default function ControlPanel({
         return;
       }
       const v = new Validator();
+      console.log(obj);
       if (v.validate(obj, tableSchema).valid) {
         addTable({
-          ...obj,
-          x: obj.x + 20,
-          y: obj.y + 20,
-          id: nanoid(),
+          table: {
+            ...obj,
+            x: obj.x + 20,
+            y: obj.y + 20,
+            id: nanoid(),
+          },
         });
       } else if (v.validate(obj, areaSchema).valid) {
         addArea({
@@ -764,6 +772,7 @@ export default function ControlPanel({
           setTables(diagram.tables);
           setRelationships(diagram.references);
           setAreas(diagram.areas);
+          setGistId(diagram.gistId ?? "");
           setNotes(diagram.notes);
           setTasks(diagram.todos ?? []);
           setTransform({

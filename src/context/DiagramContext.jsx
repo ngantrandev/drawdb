@@ -18,46 +18,44 @@ export default function DiagramContextProvider({ children }) {
 
   const addTable = (data, addToHistory = true) => {
     const id = nanoid();
+    const newTable = {
+      id,
+      name: `table_${id}`,
+      x: transform.pan.x,
+      y: transform.pan.y,
+      locked: false,
+      fields: [
+        {
+          name: "id",
+          type: database === DB.GENERIC ? "INT" : "INTEGER",
+          default: "",
+          check: "",
+          primary: true,
+          unique: true,
+          notNull: true,
+          increment: true,
+          comment: "",
+          id: nanoid(),
+        },
+      ],
+      comment: "",
+      indices: [],
+      color: defaultBlue,
+    };
     if (data) {
       setTables((prev) => {
         const temp = prev.slice();
-        temp.splice(data.index, 0, data);
+        temp.splice(data.index || tables.length, 0, data.table);
         return temp;
       });
     } else {
-      setTables((prev) => [
-        ...prev,
-        {
-          id,
-          name: `table_${prev.length}`,
-          x: transform.pan.x,
-          y: transform.pan.y,
-          locked: false,
-          fields: [
-            {
-              name: "id",
-              type: database === DB.GENERIC ? "INT" : "INTEGER",
-              default: "",
-              check: "",
-              primary: true,
-              unique: true,
-              notNull: true,
-              increment: true,
-              comment: "",
-              id: nanoid(),
-            },
-          ],
-          comment: "",
-          indices: [],
-          color: defaultBlue,
-        },
-      ]);
+      setTables((prev) => [...prev, newTable]);
     }
     if (addToHistory) {
       setUndoStack((prev) => [
         ...prev,
         {
-          id: data ? data.id : id,
+          data: data || { table: newTable, index: tables.length - 1 },
           action: Action.ADD,
           element: ObjectType.TABLE,
           message: t("add_table"),
@@ -183,7 +181,10 @@ export default function DiagramContextProvider({ children }) {
           {
             action: Action.ADD,
             element: ObjectType.RELATIONSHIP,
-            data: data,
+            data: {
+              relationship: data,
+              index: prevUndo.length,
+            },
             message: t("add_relationship"),
           },
         ]);
@@ -193,30 +194,32 @@ export default function DiagramContextProvider({ children }) {
     } else {
       setRelationships((prev) => {
         const temp = prev.slice();
-        temp.splice(data.id, 0, data);
-        return temp.map((t, i) => ({ ...t, id: i }));
+        temp.splice(data.index, 0, data.relationship || data);
+        return temp;
       });
     }
   };
 
   const deleteRelationship = (id, addToHistory = true) => {
     if (addToHistory) {
+      const relationshipIndex = relationships.findIndex((r) => r.id === id);
       setUndoStack((prev) => [
         ...prev,
         {
           action: Action.DELETE,
           element: ObjectType.RELATIONSHIP,
-          data: relationships[id],
+          data: {
+            relationship: relationships[relationshipIndex],
+            index: relationshipIndex,
+          },
           message: t("delete_relationship", {
-            refName: relationships[id].name,
+            refName: relationships[relationshipIndex].name,
           }),
         },
       ]);
       setRedoStack([]);
     }
-    setRelationships((prev) =>
-      prev.filter((e) => e.id !== id).map((e, i) => ({ ...e, id: i })),
-    );
+    setRelationships((prev) => prev.filter((e) => e.id !== id));
   };
 
   const updateRelationship = (id, updatedValues) => {

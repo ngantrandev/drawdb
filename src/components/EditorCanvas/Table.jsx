@@ -129,6 +129,8 @@ export default function Table({
     }
   };
 
+  if (tableData.hidden) return null;
+
   return (
     <>
       <foreignObject
@@ -432,7 +434,11 @@ export default function Table({
                 backgroundColor: "#d42020b3",
               }}
               icon={<IconMinus />}
-              onClick={() => deleteField(fieldData, tableData.id)}
+              disabled={layout.readOnly}
+              onClick={() => {
+                if (layout.readOnly) return;
+                deleteField(fieldData, tableData.id);
+              }}
             />
           ) : settings.showDataTypes ? (
             <div className="flex gap-1 items-center">

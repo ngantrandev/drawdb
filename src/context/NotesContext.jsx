@@ -1,5 +1,10 @@
-import { createContext, useState } from "react";
-import { Action, ObjectType, defaultNoteTheme } from "../data/constants";
+import { createContext, useState, useCallback } from "react";
+import {
+  Action,
+  ObjectType,
+  defaultNoteTheme,
+  noteWidth,
+} from "../data/constants";
 import { useUndoRedo, useTransform, useSelect } from "../hooks";
 import { Toast } from "@douyinfe/semi-ui";
 import { useTranslation } from "react-i18next";
@@ -33,6 +38,7 @@ export default function NotesContextProvider({ children }) {
           locked: false,
           color: defaultNoteTheme,
           height,
+          width: noteWidth,
         },
       ]);
     }
@@ -76,7 +82,7 @@ export default function NotesContextProvider({ children }) {
     }
   };
 
-  const updateNote = (id, values) => {
+  const updateNote = useCallback((id, values) => {
     setNotes((prev) =>
       prev.map((t) => {
         if (t.id === id) {
@@ -88,7 +94,7 @@ export default function NotesContextProvider({ children }) {
         return t;
       }),
     );
-  };
+  }, []);
 
   return (
     <NotesContext.Provider
